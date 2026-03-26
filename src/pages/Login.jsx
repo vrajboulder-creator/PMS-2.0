@@ -1,5 +1,6 @@
-import { C, F, M } from "../shared/theme";
+import { C, F } from "../shared/theme";
 import { supabase } from "../supabaseClient";
+import BoulderLogo from "../shared/BoulderLogo";
 
 export default function Login() {
   const handleMicrosoftLogin = async () => {
@@ -14,12 +15,10 @@ export default function Login() {
 
   return (
     <div style={{ fontFamily: F, background: C.page, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", borderRadius: 14, padding: "40px 48px", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", textAlign: "center", maxWidth: 400, width: "100%" }}>
-        <div style={{ width: 48, height: 48, borderRadius: 12, background: `linear-gradient(135deg, ${C.a}, ${C.p})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-          <svg width="22" height="22" fill="none" stroke="#fff" strokeWidth="2.2" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
+      <div style={{ background: "#fff", borderRadius: 14, padding: "40px 48px", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", textAlign: "center", maxWidth: 420, width: "100%" }}>
+        <div style={{ marginBottom: 32, display: "flex", justifyContent: "center" }}>
+          <BoulderLogo height={38} showSub />
         </div>
-        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.03em", color: C.t, marginBottom: 4 }}>AgencyOS</div>
-        <div style={{ fontSize: 11, color: C.t3, fontWeight: 500, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 32 }}>Command Center</div>
 
         <button
           onClick={handleMicrosoftLogin}

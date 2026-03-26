@@ -14,6 +14,7 @@ import ProjectDetail from "./pages/ProjectDetail";
 import PipelineView from "./pages/PipelineView";
 import TeamView from "./pages/TeamView";
 import Login from "./pages/Login";
+import BoulderLogo from "./shared/BoulderLogo";
 
 /* ═══ NAV ═══ */
 const NAV=[
@@ -95,9 +96,8 @@ function App({ session }){
 
       {/* ═══ SIDEBAR ═══ */}
       <aside style={{width:232,background:"#fff",borderRight:`1px solid ${C.b}`,display:"flex",flexDirection:"column",flexShrink:0,position:"fixed",top:0,left:0,bottom:0,zIndex:200}}>
-        <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.b}`,display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,${C.a},${C.p})`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><svg width="13" height="13" fill="none" stroke="#fff" strokeWidth="2.2" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-          <div><div style={{fontSize:13.5,fontWeight:700,letterSpacing:"-0.03em",color:C.t}}>AgencyOS</div><div style={{fontSize:9,color:C.t3,fontWeight:500,letterSpacing:"0.04em",textTransform:"uppercase"}}>Command Center</div></div>
+        <div style={{padding:"12px 18px",borderBottom:`1px solid ${C.b}`,display:"flex",alignItems:"center"}}>
+          <BoulderLogo height={18}/>
         </div>
         <nav style={{flex:1,overflowY:"auto",padding:"6px 10px"}}>
           {NAV.map((item,idx)=>{
