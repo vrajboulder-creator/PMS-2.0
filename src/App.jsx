@@ -4,7 +4,7 @@ import { useTeam, useClients, useProjects } from "./useSupabaseData";
 import { F, M, C } from "./shared/theme";
 import { I } from "./shared/icons";
 import { setStore, _TEAM, _CLIENTS, _PROJECTS, gc, gm } from "./shared/store";
-import { Av, AvStack, HB, SB, PB, StB, Badge, Btn, Panel, Table, ConfirmDelete } from "./components/ui";
+import { Av, AvStack, SB, PB, StB, Badge, Btn, Panel, Table, ConfirmDelete } from "./components/ui";
 import ClientForm from "./components/forms/ClientForm";
 import ProjectForm from "./components/forms/ProjectForm";
 import TaskForm from "./components/forms/TaskForm";
@@ -146,15 +146,15 @@ function App({ session }){
           {detail?.t==="client"&&<ClientDetail cl={_CLIENTS.find(c=>c.id===detail.id)} onOpen={id=>{setDetail({t:"project",id})}} onEdit={cl=>setModal({t:"editClient",data:cl})} onDelete={cl=>setModal({t:"deleteClient",id:cl.id,name:cl.name})}/>}
 
           {/* ═══ PROJECTS ═══ */}
-          {nav==="projects"&&!detail&&<Panel noPad title={`Projects (${_PROJECTS.length})`} actions={<Btn sm onClick={()=>setModal({t:"addProject"})}>{I.plus} New Project</Btn>}><Table cols={[
+          {nav==="projects"&&!detail&&<><Panel noPad title={`Projects (${_PROJECTS.length})`} actions={<Btn sm onClick={()=>setModal({t:"addProject"})}>{I.plus} New Project</Btn>}><Table cols={[
             {label:"Project",render:r=><div><div style={{fontWeight:600}}>{r.name}</div><div style={{fontSize:10,color:C.t3}}>{gc(r.cl)?.name}</div></div>},
-            {label:"Stage",render:r=><StB stage={r.stage}/>},{label:"Health",render:r=><HB h={r.health}/>},
+            {label:"Stage",render:r=><StB stage={r.stage}/>},
             {label:"PM",render:r=>{const m=gm(r.pm);return m?<div style={{display:"flex",alignItems:"center",gap:5}}><Av m={m} sz={20}/><span style={{fontSize:11}}>{m.name}</span></div>:null}},
             {label:"Team",render:r=><AvStack ids={r.team}/>},
             {label:"Tasks",render:r=><span style={{fontFamily:M,fontSize:11}}>{r.tasks.filter(t=>t.st==="done").length}/{r.tasks.length}</span>},
             {label:"Budget",render:r=><span style={{fontFamily:M,fontSize:11}}>{r.budget}</span>},
             {label:"",render:r=><div style={{display:"flex",gap:4}}><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"editProject",data:r})}}>Edit</Btn><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"deleteProject",id:r.id,name:r.name})}}>Delete</Btn></div>},
-          ]} rows={_PROJECTS} onRow={r=>{setDetail({t:"project",id:r.id})}}/><div style={{padding:"12px 16px",borderTop:`1px solid ${C.b2}`}}><Btn sm onClick={()=>setModal({t:"addProject"})} style={{width:"100%",justifyContent:"center"}}>{I.plus} New Project</Btn></div></Panel>}
+          ]} rows={_PROJECTS} onRow={r=>{setDetail({t:"project",id:r.id})}}/></Panel><button onClick={()=>setModal({t:"addProject"})} style={{position:"fixed",bottom:28,right:28,width:50,height:50,borderRadius:12,background:C.a,color:"#fff",border:"none",cursor:"pointer",boxShadow:"0 4px 14px rgba(59,130,246,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,zIndex:300,transition:"all .15s"}} onMouseOver={e=>e.currentTarget.style.background=C.aHover} onMouseOut={e=>e.currentTarget.style.background=C.a} title="New Project">+</button></>}
 
           {detail?.t==="project"&&<ProjectDetail p={_PROJECTS.find(p=>p.id===detail.id)} exT={exT} tT={tT} exS={exS} tS={tS} onEdit={p=>setModal({t:"editProject",data:p})} onDelete={p=>setModal({t:"deleteProject",id:p.id,name:p.name})} onAddTask={pid=>setModal({t:"addTask",projectId:pid})} onEditTask={task=>setModal({t:"editTask",data:task})} onDeleteTask={task=>setModal({t:"deleteTask",id:task.id,name:task.title})} onUpdateTask={updateTask} onAddComment={addComment} onUpdateProject={updateProject}/>}
 
@@ -162,14 +162,14 @@ function App({ session }){
           {nav==="pipeline"&&!detail&&<PipelineView onOpen={id=>{setDetail({t:"project",id})}} onStageChange={handleStageChange} onAdd={()=>setModal({t:"addProject"})}/>}
 
           {/* ═══ TASKS ═══ */}
-          {nav==="tasks"&&!detail&&<Panel noPad title={`All Tasks (${allT.length})`} actions={<Btn sm onClick={()=>setModal({t:"addTask",projectId:_PROJECTS[0]?.id})}>{I.plus} Task</Btn>}><Table cols={[
+          {nav==="tasks"&&!detail&&<><Panel noPad title={`All Tasks (${allT.length})`} actions={<Btn sm onClick={()=>setModal({t:"addTask",projectId:_PROJECTS[0]?.id})}>{I.plus} Task</Btn>}><Table cols={[
             {label:"Task",render:r=><span style={{fontWeight:500}}>{r.title}</span>},
             {label:"Project / Client",render:r=>{const proj=_PROJECTS.find(p=>p.tasks.some(t=>t.id===r.id));const cl=proj?gc(proj.cl):null;return<div><div style={{fontSize:11,color:C.t2}}>{proj?.name||"—"}</div>{cl&&<div style={{fontSize:10,color:C.t3}}>{cl.name}</div>}</div>}},
             {label:"Status",render:r=><SB s={r.st}/>},{label:"Priority",render:r=><PB p={r.pr}/>},
             {label:"Owner",render:r=>{const m=gm(r.ow);return m?<div style={{display:"flex",alignItems:"center",gap:4}}><Av m={m} sz={18}/><span style={{fontSize:11}}>{m.name.split(" ")[0]}</span></div>:null}},
             {label:"Due",render:r=><span style={{fontFamily:M,fontSize:11,color:r.due&&new Date(r.due)<new Date()&&r.st!=="done"?C.r:C.t2}}>{r.due||"—"}</span>},
             {label:"",render:r=><div style={{display:"flex",gap:4}}><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"editTask",data:{...r,project_id:_PROJECTS.find(p=>p.tasks.some(t=>t.id===r.id))?.id}})}}>Edit</Btn><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"deleteTask",id:r.id,name:r.title})}}>Delete</Btn></div>},
-          ]} rows={allT}/><div style={{padding:"12px 16px",borderTop:`1px solid ${C.b2}`}}><Btn sm onClick={()=>setModal({t:"addTask",projectId:_PROJECTS[0]?.id})} style={{width:"100%",justifyContent:"center"}}>{I.plus} Add Task</Btn></div></Panel>}
+          ]} rows={allT}/></Panel><button onClick={()=>setModal({t:"addTask",projectId:_PROJECTS[0]?.id})} style={{position:"fixed",bottom:28,right:28,width:50,height:50,borderRadius:12,background:C.a,color:"#fff",border:"none",cursor:"pointer",boxShadow:"0 4px 14px rgba(59,130,246,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,zIndex:300,transition:"all .15s"}} onMouseOver={e=>e.currentTarget.style.background=C.aHover} onMouseOut={e=>e.currentTarget.style.background=C.a} title="Add Task">+</button></>}
 
           {/* ═══ ISSUES ═══ */}
           {nav==="issues"&&!detail&&<Panel noPad title={`Issues (${allI.length})`} actions={<Btn sm>{I.plus} Report</Btn>}><Table cols={[

@@ -1,6 +1,6 @@
 import { C, M, SC } from "../shared/theme";
 import { _TEAM, _CLIENTS, _PROJECTS, gc } from "../shared/store";
-import { Av, HB, StB, Panel, Stat } from "../components/ui";
+import { HB, StB, Panel, Stat } from "../components/ui";
 
 export default function Dashboard({ onOpen }) {
   const active = _PROJECTS.filter(p => !["Completed", "Archived", "On Hold"].includes(p.stage));
@@ -45,15 +45,9 @@ export default function Dashboard({ onOpen }) {
       </Panel>
     </div>
 
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-      <Panel title="Team Workload">{_TEAM.map(m => { const pct = Math.round(m.used / m.cap * 100); return <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-        <Av m={m} sz={22} /><div style={{ flex: 1 }}><div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}><span style={{ fontSize: 11, fontWeight: 500 }}>{m.name}</span><span style={{ fontSize: 10, fontFamily: M, color: pct > 90 ? C.r : pct > 75 ? C.y : C.t2 }}>{m.used}h/{m.cap}h</span></div>
-        <div style={{ height: 4, borderRadius: 2, background: C.s3, overflow: "hidden" }}><div style={{ height: "100%", borderRadius: 2, background: pct > 90 ? C.r : pct > 75 ? C.y : C.g, width: `${pct}%` }} /></div></div>
-      </div> })}</Panel>
-      <Panel title="Pipeline Distribution">{["Lead", "Proposal", "Build", "Client Review", "QA / UAT", "Completed"].map(s => { const n = _PROJECTS.filter(p => p.stage === s).length; if (!n) return null; return <div key={s} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-        <div style={{ width: 8, height: 8, borderRadius: 2, background: SC[s], flexShrink: 0 }} /><span style={{ fontSize: 11, flex: 1 }}>{s}</span><span style={{ fontSize: 11, fontFamily: M, fontWeight: 600, color: C.t2 }}>{n}</span>
-        <div style={{ width: 60, height: 4, borderRadius: 2, background: C.s3, overflow: "hidden" }}><div style={{ height: "100%", borderRadius: 2, background: SC[s], width: `${(n / _PROJECTS.length) * 100}%` }} /></div>
-      </div> })}</Panel>
-    </div>
+    <Panel title="Pipeline Distribution">{["Lead", "Proposal", "Build", "Revision", "Client Review", "QA / UAT", "Completed"].map(s => { const n = _PROJECTS.filter(p => p.stage === s).length; if (!n) return null; return <div key={s} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+      <div style={{ width: 8, height: 8, borderRadius: 2, background: SC[s], flexShrink: 0 }} /><span style={{ fontSize: 11, flex: 1 }}>{s}</span><span style={{ fontSize: 11, fontFamily: M, fontWeight: 600, color: C.t2 }}>{n}</span>
+      <div style={{ width: 120, height: 4, borderRadius: 2, background: C.s3, overflow: "hidden" }}><div style={{ height: "100%", borderRadius: 2, background: SC[s], width: `${(n / _PROJECTS.length) * 100}%` }} /></div>
+    </div> })}</Panel>
   </div>;
 }

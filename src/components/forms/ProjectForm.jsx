@@ -5,7 +5,7 @@ import { Modal, FInput, FSelect, FRow, FLabel, Btn, Av } from "../ui";
 
 export default function ProjectForm({ data, onSave, onClose }) {
   const stages = ["Lead", "Discovery", "Proposal", "Awaiting Approval", "Build", "Internal Review", "Client Review", "QA / UAT", "Deployment", "Ongoing Support", "Completed", "On Hold"];
-  const types = ["AI Agent", "Automation", "AI + Automation", "Integration", "Consulting"];
+  const types = ["AI Agent", "Automation", "AI + Automation", "Integration", "Consulting", "Web Development", "Mobile App", "E-Commerce", "Data Analytics", "Cloud Infrastructure", "UI/UX Design", "API Development", "DevOps", "Cybersecurity", "Machine Learning", "Blockchain", "IoT", "SaaS Platform", "CRM System", "ERP System"];
   const [f, sF] = useState({ name: data?.name || "", cl: data?.cl || _CLIENTS[0]?.id || "", stage: data?.stage || "Lead", health: data?.health || "healthy", pm: data?.pm || _TEAM[0]?.id || "", team: data?.team || [], type: data?.type || "Automation", budget: data?.budget || "", desc: data?.desc || "", start: data?.start || "", target: data?.target || "" });
   const u = (k, v) => sF(p => ({ ...p, [k]: v }));
   const toggleTeam = id => sF(p => ({ ...p, team: p.team.includes(id) ? p.team.filter(x => x !== id) : [...p.team, id] }));

@@ -4,65 +4,101 @@ import { I } from "../shared/icons";
 import { _TEAM, gc, gm } from "../shared/store";
 import { Av, AvStack, HB, SB, PB, StB, FI, Badge, Btn, Panel, Table } from "../components/ui";
 
-const MicBtn = ({ onResult, listening, onToggle }) => (
-  <button onClick={onToggle} title={listening ? "Stop dictating" : "Dictate"} style={{
+/* ═══ MIC BUTTON ═══ */
+const MicBtn = ({ listening, onToggle }) => (
+  <button onClick={onToggle} title={listening ? "Stop" : "Dictate"} style={{
     background: listening ? C.r : "none", border: `1px solid ${listening ? C.r : C.b}`,
     borderRadius: 6, padding: "5px 8px", cursor: "pointer", color: listening ? "#fff" : C.t3,
     display: "inline-flex", alignItems: "center", transition: "all .15s",
   }}>
-    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+    <svg width="14" height="14" fill={listening ? "#fff" : "none"} stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
       <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
       <path d="M19 10v2a7 7 0 01-14 0v-2" />
-      <line x1="12" y1="19" x2="12" y2="23" />
-      <line x1="8" y1="23" x2="16" y2="23" />
+      <line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" />
     </svg>
   </button>
 );
 
-export default function ProjectDetail({ p, exT, tT, exS, tS, onEdit, onDelete, onAddTask, onEditTask, onDeleteTask, onUpdateTask, onAddComment, onUpdateProject }) {
-  const [newObj, setNewObj] = useState("");
+/* ═══ FAST DICTATION HOOK — continuous + interim results ═══ */
+function useDictate(onText) {
   const [listening, setListening] = useState(false);
-  const recognitionRef = useRef(null);
+  const recRef = useRef(null);
 
-  const toggleDictate = useCallback(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) { alert("Speech recognition is not supported in this browser."); return; }
+  const toggle = useCallback(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Speech recognition not supported in this browser."); return; }
 
-    if (listening && recognitionRef.current) {
-      recognitionRef.current.stop();
-      setListening(false);
-      return;
-    }
+    if (listening && recRef.current) { recRef.current.stop(); setListening(false); return; }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setNewObj(prev => prev ? prev + " " + transcript : transcript);
+    const rec = new SR();
+    rec.lang = "en-US";
+    rec.continuous = true;
+    rec.interimResults = true;
+    let finalText = "";
+    rec.onresult = (e) => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) { finalText += t; onText(t.trim()); }
+        else interim = t;
+      }
+      if (interim) onText(interim.trim(), true);
     };
-    recognition.onend = () => setListening(false);
-    recognition.onerror = () => setListening(false);
-    recognitionRef.current = recognition;
-    recognition.start();
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recRef.current = rec;
+    rec.start();
     setListening(true);
-  }, [listening]);
+  }, [listening, onText]);
 
+  return { listening, toggle };
+}
+
+/* ═══ EDITABLE LIST — reusable for Objectives, Risks, etc ═══ */
+function EditableList({ title, items, icon, iconColor, placeholder, onAdd, onRemove, emptyText }) {
+  const [val, setVal] = useState("");
+  const [interim, setInterim] = useState("");
+
+  const handleDictateText = useCallback((text, isInterim) => {
+    if (isInterim) { setInterim(text); }
+    else { setInterim(""); setVal(prev => prev ? prev + " " + text : text); }
+  }, []);
+
+  const { listening, toggle } = useDictate(handleDictateText);
+
+  const add = () => { if (!val.trim()) return; onAdd(val.trim()); setVal(""); };
+
+  return (
+    <Panel title={title} actions={<span style={{ fontSize: 10, color: C.t3 }}>{items.length} items</span>}>
+      {items.map((item, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, marginBottom: 6, padding: "4px 0" }}>
+          <span style={{ color: iconColor, flexShrink: 0 }}>{icon}</span>
+          <span style={{ flex: 1 }}>{item}</span>
+          <button onClick={() => onRemove(i)} style={{ background: "none", border: "none", cursor: "pointer", color: C.t3, padding: 0, flexShrink: 0 }} title="Remove">{I.x}</button>
+        </div>
+      ))}
+      <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+        <div style={{ flex: 1, position: "relative" }}>
+          <input value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => { if (e.key === "Enter") add() }}
+            placeholder={listening ? "Listening..." : placeholder}
+            style={{ width: "100%", padding: "7px 12px", borderRadius: 6, border: `1px solid ${listening ? C.r : C.b}`, fontSize: 11, fontFamily: F, color: C.t, outline: "none", transition: "border-color .2s", boxSizing: "border-box" }}
+            onFocus={e => { if (!listening) e.target.style.borderColor = C.bFocus }} onBlur={e => { if (!listening) e.target.style.borderColor = C.b }} />
+          {listening && interim && <div style={{ position: "absolute", left: 12, bottom: -16, fontSize: 10, color: C.t3, fontStyle: "italic" }}>{interim}...</div>}
+        </div>
+        <MicBtn listening={listening} onToggle={toggle} />
+        <Btn sm v="primary" onClick={add}>{I.plus} Add</Btn>
+      </div>
+    </Panel>
+  );
+}
+
+/* ═══ PROJECT DETAIL ═══ */
+export default function ProjectDetail({ p, exT, tT, exS, tS, onEdit, onDelete, onAddTask, onEditTask, onDeleteTask, onUpdateTask, onAddComment, onUpdateProject }) {
   if (!p) return null;
   const cl = gc(p.cl), pm = gm(p.pm);
   const done = p.tasks.filter(t => t.st === "done").length, total = p.tasks.length;
 
-  const addObjective = () => {
-    if (!newObj.trim()) return;
-    const updated = [...(p.obj || []), newObj.trim()];
-    onUpdateProject(p.id, { obj: updated });
-    setNewObj("");
-  };
-  const removeObjective = (idx) => {
-    const updated = (p.obj || []).filter((_, i) => i !== idx);
-    onUpdateProject(p.id, { obj: updated });
-  };
+  const updateList = (field, items) => onUpdateProject(p.id, { [field]: items });
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
     {/* Header */}
@@ -81,30 +117,25 @@ export default function ProjectDetail({ p, exT, tT, exS, tS, onEdit, onDelete, o
         <div style={{ height: 5, borderRadius: 3, background: C.s3 }}><div style={{ height: "100%", borderRadius: 3, background: C.g, width: `${(done / total) * 100}%`, transition: "width .3s" }} /></div></div>}
     </div>
 
-    {/* ═══ ALL SECTIONS STACKED VERTICALLY ═══ */}
+    {/* ═══ EDITABLE SECTIONS ═══ */}
 
-    {/* Objectives — editable */}
-    <Panel title="Objectives" actions={<span style={{ fontSize: 10, color: C.t3 }}>{(p.obj || []).length} items</span>}>
-      {(p.obj || []).map((o, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, marginBottom: 6, padding: "4px 0" }}>
-        <span style={{ color: C.g, flexShrink: 0 }}>◆</span>
-        <span style={{ flex: 1 }}>{o}</span>
-        <button onClick={() => removeObjective(i)} style={{ background: "none", border: "none", cursor: "pointer", color: C.t3, padding: 0, flexShrink: 0 }} title="Remove">{I.x}</button>
-      </div>)}
-      <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
-        <input value={newObj} onChange={e => setNewObj(e.target.value)} onKeyDown={e => { if (e.key === "Enter") addObjective() }} placeholder={listening ? "Listening..." : "Add an objective..."} style={{ flex: 1, padding: "7px 12px", borderRadius: 6, border: `1px solid ${listening ? C.r : C.b}`, fontSize: 11, fontFamily: F, color: C.t, outline: "none", transition: "border-color .2s" }} onFocus={e => { if (!listening) e.target.style.borderColor = C.bFocus }} onBlur={e => { if (!listening) e.target.style.borderColor = C.b }} />
-        <MicBtn listening={listening} onToggle={toggleDictate} />
-        <Btn sm v="primary" onClick={addObjective}>{I.plus} Add</Btn>
-      </div>
+    <EditableList title="Objectives" items={p.obj || []} icon="◆" iconColor={C.g} placeholder="Add an objective..."
+      onAdd={text => updateList("obj", [...(p.obj || []), text])}
+      onRemove={i => updateList("obj", (p.obj || []).filter((_, idx) => idx !== i))} />
+
+    <EditableList title="Key Risks" items={p.risks || []} icon={I.alert} iconColor={C.y} placeholder="Add a risk..."
+      onAdd={text => updateList("risks", [...(p.risks || []), text])}
+      onRemove={i => updateList("risks", (p.risks || []).filter((_, idx) => idx !== i))} />
+
+    {/* Open Issues — editable */}
+    <Panel noPad title={`Issues (${p.issues.length})`}>
+      {p.issues.length ? <Table cols={[
+        { label: "Issue", render: r => <span style={{ fontWeight: 500 }}>{r.title}</span> },
+        { label: "Type", render: r => <Badge sm>{r.tp}</Badge> },
+        { label: "Severity", render: r => <Badge sm color={r.sev === "critical" ? C.r : r.sev === "high" ? C.o : C.y}>{r.sev}</Badge> },
+        { label: "Status", render: r => <Badge sm color={r.st === "open" ? C.r : C.g}>{r.st}</Badge> },
+      ]} rows={p.issues} /> : <div style={{ padding: 20, textAlign: "center", color: C.t3, fontSize: 12 }}>No issues</div>}
     </Panel>
-
-    {/* Key Risks */}
-    <Panel title="Key Risks">{p.risks?.length ? p.risks.map((r, i) => <div key={i} style={{ display: "flex", gap: 8, fontSize: 12, marginBottom: 4 }}><span style={{ color: C.y }}>{I.alert}</span>{r}</div>) : <span style={{ fontSize: 12, color: C.t3 }}>None identified</span>}</Panel>
-
-    {/* Open Issues */}
-    {p.issues.length > 0 && <Panel noPad title={`Open Issues (${p.issues.length})`}><Table cols={[
-      { label: "Issue", render: r => <span style={{ fontWeight: 500 }}>{r.title}</span> },
-      { label: "Type", render: r => <Badge sm>{r.tp}</Badge> }, { label: "Severity", render: r => <Badge sm color={r.sev === "critical" ? C.r : r.sev === "high" ? C.o : C.y}>{r.sev}</Badge> },
-    ]} rows={p.issues} /></Panel>}
 
     {/* Tasks */}
     <Panel noPad title={`Tasks (${total})`} actions={<Btn sm onClick={() => onAddTask(p.id)}>{I.plus} Add Task</Btn>}>
