@@ -69,6 +69,10 @@ function App({ session }){
   const[exS,setExS]=useState({});
   const[search,setSearch]=useState("");
   const[modal,setModal]=useState(null);
+  const[pSort,setPSort]=useState("name");
+  const[pFilter,setPFilter]=useState("all");
+  const[tSort,setTSort]=useState("title");
+  const[tFilter,setTFilter]=useState("all");
   const tT=id=>setExT(p=>({...p,[id]:!p[id]}));
   const tS=id=>setExS(p=>({...p,[id]:!p[id]}));
   const allT=_PROJECTS.flatMap(p=>p.tasks);
@@ -134,26 +138,39 @@ function App({ session }){
           {nav==="dashboard"&&!detail&&<Dashboard onOpen={id=>{setDetail({t:"project",id})}}/>}
 
           {/* ═══ CLIENTS ═══ */}
-          {nav==="clients"&&!detail&&<Panel noPad title={`Clients (${_CLIENTS.length})`} actions={<Btn sm onClick={()=>setModal({t:"addClient"})}>{I.plus} Add Client</Btn>}><Table cols={[
+          {nav==="clients"&&!detail&&<><Panel noPad title={`Clients (${_CLIENTS.length})`} actions={<Btn sm onClick={()=>setModal({t:"addClient"})}>{I.plus} Add Client</Btn>}><Table cols={[
             {label:"Company",render:r=><div><div style={{fontWeight:600}}>{r.name}</div><div style={{fontSize:10,color:C.t3}}>{r.industry}</div></div>},
             {label:"Type",render:r=><Badge sm>{r.type}</Badge>},
             {label:"Contact",render:r=><span style={{fontSize:11}}>{r.contact}</span>},
             {label:"Stack",render:r=><div style={{display:"flex",gap:3,flexWrap:"wrap"}}>{(r.stack||[]).map(s=><Badge key={s} sm>{s}</Badge>)}</div>},
             {label:"",render:r=><div style={{display:"flex",gap:4}}><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"editClient",data:r})}}>Edit</Btn><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"deleteClient",id:r.id,name:r.name})}}>Delete</Btn></div>},
-          ]} rows={_CLIENTS} onRow={r=>setDetail({t:"client",id:r.id})}/></Panel>}
+          ]} rows={_CLIENTS} onRow={r=>setDetail({t:"client",id:r.id})}/></Panel><button onClick={()=>setModal({t:"addClient"})} style={{position:"fixed",bottom:28,right:28,width:50,height:50,borderRadius:12,background:C.a,color:"#fff",border:"none",cursor:"pointer",boxShadow:"0 4px 14px rgba(59,130,246,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,zIndex:300,transition:"all .15s"}} onMouseOver={e=>e.currentTarget.style.background=C.aHover} onMouseOut={e=>e.currentTarget.style.background=C.a} title="Add Client">+</button></>}
 
           {detail?.t==="client"&&<ClientDetail cl={_CLIENTS.find(c=>c.id===detail.id)} onOpen={id=>{setDetail({t:"project",id})}} onEdit={cl=>setModal({t:"editClient",data:cl})} onDelete={cl=>setModal({t:"deleteClient",id:cl.id,name:cl.name})}/>}
 
           {/* ═══ PROJECTS ═══ */}
-          {nav==="projects"&&!detail&&<><Panel noPad title={`Projects (${_PROJECTS.length})`} actions={<Btn sm onClick={()=>setModal({t:"addProject"})}>{I.plus} New Project</Btn>}><Table cols={[
-            {label:"Project",render:r=><div><div style={{fontWeight:600}}>{r.name}</div><div style={{fontSize:10,color:C.t3}}>{gc(r.cl)?.name}</div></div>},
-            {label:"Stage",render:r=><StB stage={r.stage}/>},
-            {label:"PM",render:r=>{const m=gm(r.pm);return m?<div style={{display:"flex",alignItems:"center",gap:5}}><Av m={m} sz={20}/><span style={{fontSize:11}}>{m.name}</span></div>:null}},
-            {label:"Team",render:r=><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{r.team.map(id=>{const m=gm(id);return m?<div key={id} style={{display:"flex",alignItems:"center",gap:3}}><Av m={m} sz={18}/><span style={{fontSize:10,color:C.t2}}>{m.name}</span></div>:null})}</div>},
-            {label:"Tasks",render:r=><span style={{fontFamily:M,fontSize:11}}>{r.tasks.filter(t=>t.st==="done").length}/{r.tasks.length}</span>},
-            {label:"Budget",render:r=><span style={{fontFamily:M,fontSize:11}}>{r.budget}</span>},
-            {label:"",render:r=><div style={{display:"flex",gap:4}}><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"editProject",data:r})}}>Edit</Btn><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"deleteProject",id:r.id,name:r.name})}}>Delete</Btn></div>},
-          ]} rows={_PROJECTS} onRow={r=>{setDetail({t:"project",id:r.id})}}/></Panel><button onClick={()=>setModal({t:"addProject"})} style={{position:"fixed",bottom:28,right:28,width:50,height:50,borderRadius:12,background:C.a,color:"#fff",border:"none",cursor:"pointer",boxShadow:"0 4px 14px rgba(59,130,246,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,zIndex:300,transition:"all .15s"}} onMouseOver={e=>e.currentTarget.style.background=C.aHover} onMouseOut={e=>e.currentTarget.style.background=C.a} title="New Project">+</button></>}
+          {nav==="projects"&&!detail&&(()=>{
+            const stages=[...new Set(_PROJECTS.map(p=>p.stage))];
+            let fp=pFilter==="all"?_PROJECTS:_PROJECTS.filter(p=>p.stage===pFilter);
+            fp=[...fp].sort((a,b)=>{if(pSort==="name")return a.name.localeCompare(b.name);if(pSort==="stage")return a.stage.localeCompare(b.stage);if(pSort==="budget")return(parseInt(a.budget?.replace(/\D/g,""))||0)-(parseInt(b.budget?.replace(/\D/g,""))||0);return 0});
+            return<><Panel noPad title={`Projects (${fp.length})`} actions={<div style={{display:"flex",gap:6,alignItems:"center"}}>
+              <select value={pFilter} onChange={e=>setPFilter(e.target.value)} style={{padding:"4px 8px",borderRadius:6,border:`1px solid ${C.b}`,fontSize:10,fontFamily:F,color:C.t2,background:"#fff",cursor:"pointer"}}>
+                <option value="all">All Stages</option>{stages.map(s=><option key={s} value={s}>{s}</option>)}
+              </select>
+              <select value={pSort} onChange={e=>setPSort(e.target.value)} style={{padding:"4px 8px",borderRadius:6,border:`1px solid ${C.b}`,fontSize:10,fontFamily:F,color:C.t2,background:"#fff",cursor:"pointer"}}>
+                <option value="name">Sort: Name</option><option value="stage">Sort: Stage</option><option value="budget">Sort: Budget</option>
+              </select>
+              <Btn sm onClick={()=>setModal({t:"addProject"})}>{I.plus} New Project</Btn>
+            </div>}><Table cols={[
+              {label:"Project",render:r=><div><div style={{fontWeight:600}}>{r.name}</div><div style={{fontSize:10,color:C.t3}}>{gc(r.cl)?.name}</div></div>},
+              {label:"Stage",render:r=><StB stage={r.stage}/>},
+              {label:"PM",render:r=>{const m=gm(r.pm);return m?<div style={{display:"flex",alignItems:"center",gap:5}}><Av m={m} sz={20}/><span style={{fontSize:11}}>{m.name}</span></div>:null}},
+              {label:"Team",render:r=><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{r.team.map(id=>{const m=gm(id);return m?<div key={id} style={{display:"flex",alignItems:"center",gap:3}}><Av m={m} sz={18}/><span style={{fontSize:10,color:C.t2}}>{m.name}</span></div>:null})}</div>},
+              {label:"Tasks",render:r=><span style={{fontFamily:M,fontSize:11}}>{r.tasks.filter(t=>t.st==="done").length}/{r.tasks.length}</span>},
+              {label:"Budget",render:r=><span style={{fontFamily:M,fontSize:11}}>{r.budget}</span>},
+              {label:"",render:r=><div style={{display:"flex",gap:4}}><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"editProject",data:r})}}>Edit</Btn><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"deleteProject",id:r.id,name:r.name})}}>Delete</Btn></div>},
+            ]} rows={fp} onRow={r=>{setDetail({t:"project",id:r.id})}}/></Panel><button onClick={()=>setModal({t:"addProject"})} style={{position:"fixed",bottom:28,right:28,width:50,height:50,borderRadius:12,background:C.a,color:"#fff",border:"none",cursor:"pointer",boxShadow:"0 4px 14px rgba(59,130,246,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,zIndex:300,transition:"all .15s"}} onMouseOver={e=>e.currentTarget.style.background=C.aHover} onMouseOut={e=>e.currentTarget.style.background=C.a} title="New Project">+</button></>;
+          })()}
 
           {detail?.t==="project"&&<ProjectDetail p={_PROJECTS.find(p=>p.id===detail.id)} exT={exT} tT={tT} exS={exS} tS={tS} onEdit={p=>setModal({t:"editProject",data:p})} onDelete={p=>setModal({t:"deleteProject",id:p.id,name:p.name})} onAddTask={pid=>setModal({t:"addTask",projectId:pid})} onEditTask={task=>setModal({t:"editTask",data:task})} onDeleteTask={task=>setModal({t:"deleteTask",id:task.id,name:task.title})} onUpdateTask={updateTask} onAddComment={addComment} onUpdateProject={updateProject} onAddIssue={addIssue} onAddSubtask={addSubtask} onAddActivity={addActivity}/>}
 
@@ -161,14 +178,27 @@ function App({ session }){
           {nav==="pipeline"&&!detail&&<PipelineView onOpen={id=>{setDetail({t:"project",id})}} onStageChange={handleStageChange} onAdd={()=>setModal({t:"addProject"})}/>}
 
           {/* ═══ TASKS ═══ */}
-          {nav==="tasks"&&!detail&&<><Panel noPad title={`All Tasks (${allT.length})`} actions={<Btn sm onClick={()=>setModal({t:"addTask",projectId:_PROJECTS[0]?.id})}>{I.plus} Task</Btn>}><Table cols={[
-            {label:"Task",render:r=><span style={{fontWeight:500}}>{r.title}</span>},
-            {label:"Project / Client",render:r=>{const proj=_PROJECTS.find(p=>p.tasks.some(t=>t.id===r.id));const cl=proj?gc(proj.cl):null;return<div><div style={{fontSize:11,color:C.t2}}>{proj?.name||"—"}</div>{cl&&<div style={{fontSize:10,color:C.t3}}>{cl.name}</div>}</div>}},
-            {label:"Status",render:r=><SB s={r.st}/>},{label:"Priority",render:r=><PB p={r.pr}/>},
-            {label:"Owner",render:r=>{const m=gm(r.ow);return m?<div style={{display:"flex",alignItems:"center",gap:4}}><Av m={m} sz={18}/><span style={{fontSize:11}}>{m.name.split(" ")[0]}</span></div>:null}},
-            {label:"Due",render:r=><span style={{fontFamily:M,fontSize:11,color:r.due&&new Date(r.due)<new Date()&&r.st!=="done"?C.r:C.t2}}>{r.due||"—"}</span>},
-            {label:"",render:r=><div style={{display:"flex",gap:4}}><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"editTask",data:{...r,project_id:_PROJECTS.find(p=>p.tasks.some(t=>t.id===r.id))?.id}})}}>Edit</Btn><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"deleteTask",id:r.id,name:r.title})}}>Delete</Btn></div>},
-          ]} rows={allT}/></Panel><button onClick={()=>setModal({t:"addTask",projectId:_PROJECTS[0]?.id})} style={{position:"fixed",bottom:28,right:28,width:50,height:50,borderRadius:12,background:C.a,color:"#fff",border:"none",cursor:"pointer",boxShadow:"0 4px 14px rgba(59,130,246,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,zIndex:300,transition:"all .15s"}} onMouseOver={e=>e.currentTarget.style.background=C.aHover} onMouseOut={e=>e.currentTarget.style.background=C.a} title="Add Task">+</button></>}
+          {nav==="tasks"&&!detail&&(()=>{
+            const statuses=["all","backlog","todo","in-progress","review","done","blocked"];
+            let ft=tFilter==="all"?allT:allT.filter(t=>t.st===tFilter);
+            ft=[...ft].sort((a,b)=>{if(tSort==="title")return a.title.localeCompare(b.title);if(tSort==="status")return(a.st||"").localeCompare(b.st||"");if(tSort==="priority"){const po={urgent:0,high:1,medium:2,low:3};return(po[a.pr]??9)-(po[b.pr]??9)}if(tSort==="due")return(a.due||"z").localeCompare(b.due||"z");return 0});
+            return<><Panel noPad title={`All Tasks (${ft.length})`} actions={<div style={{display:"flex",gap:6,alignItems:"center"}}>
+              <select value={tFilter} onChange={e=>setTFilter(e.target.value)} style={{padding:"4px 8px",borderRadius:6,border:`1px solid ${C.b}`,fontSize:10,fontFamily:F,color:C.t2,background:"#fff",cursor:"pointer"}}>
+                {statuses.map(s=><option key={s} value={s}>{s==="all"?"All Status":s==="in-progress"?"In Progress":s.charAt(0).toUpperCase()+s.slice(1)}</option>)}
+              </select>
+              <select value={tSort} onChange={e=>setTSort(e.target.value)} style={{padding:"4px 8px",borderRadius:6,border:`1px solid ${C.b}`,fontSize:10,fontFamily:F,color:C.t2,background:"#fff",cursor:"pointer"}}>
+                <option value="title">Sort: Name</option><option value="status">Sort: Status</option><option value="priority">Sort: Priority</option><option value="due">Sort: Due Date</option>
+              </select>
+              <Btn sm onClick={()=>setModal({t:"addTask",projectId:_PROJECTS[0]?.id})}>{I.plus} Task</Btn>
+            </div>}><Table cols={[
+              {label:"Task",render:r=><span style={{fontWeight:500}}>{r.title}</span>},
+              {label:"Project / Client",render:r=>{const proj=_PROJECTS.find(p=>p.tasks.some(t=>t.id===r.id));const cl=proj?gc(proj.cl):null;return<div><div style={{fontSize:11,color:C.t2}}>{proj?.name||"—"}</div>{cl&&<div style={{fontSize:10,color:C.t3}}>{cl.name}</div>}</div>}},
+              {label:"Status",render:r=><SB s={r.st}/>},{label:"Priority",render:r=><PB p={r.pr}/>},
+              {label:"Owner",render:r=>{const m=gm(r.ow);return m?<div style={{display:"flex",alignItems:"center",gap:4}}><Av m={m} sz={18}/><span style={{fontSize:11}}>{m.name.split(" ")[0]}</span></div>:null}},
+              {label:"Due",render:r=><span style={{fontFamily:M,fontSize:11,color:r.due&&new Date(r.due)<new Date()&&r.st!=="done"?C.r:C.t2}}>{r.due||"—"}</span>},
+              {label:"",render:r=><div style={{display:"flex",gap:4}}><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"editTask",data:{...r,project_id:_PROJECTS.find(p=>p.tasks.some(t=>t.id===r.id))?.id}})}}>Edit</Btn><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"deleteTask",id:r.id,name:r.title})}}>Delete</Btn></div>},
+            ]} rows={ft}/></Panel><button onClick={()=>setModal({t:"addTask",projectId:_PROJECTS[0]?.id})} style={{position:"fixed",bottom:28,right:28,width:50,height:50,borderRadius:12,background:C.a,color:"#fff",border:"none",cursor:"pointer",boxShadow:"0 4px 14px rgba(59,130,246,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,zIndex:300,transition:"all .15s"}} onMouseOver={e=>e.currentTarget.style.background=C.aHover} onMouseOut={e=>e.currentTarget.style.background=C.a} title="Add Task">+</button></>;
+          })()}
 
           {/* ═══ ISSUES ═══ */}
           {nav==="issues"&&!detail&&<Panel noPad title={`Issues (${allI.length})`} actions={<Btn sm>{I.plus} Report</Btn>}><Table cols={[
