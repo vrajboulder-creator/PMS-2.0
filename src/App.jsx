@@ -126,7 +126,6 @@ function App({ session }){
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <div style={{position:"relative"}}><span style={{position:"absolute",left:9,top:"50%",transform:"translateY(-50%)",color:C.t3}}>{I.search}</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search... ⌘K" style={{padding:"6px 12px 6px 30px",borderRadius:7,border:`1px solid ${C.b}`,background:C.s2,fontSize:12,fontFamily:F,width:200,color:C.t,outline:"none"}} onFocus={e=>e.target.style.borderColor=C.bFocus} onBlur={e=>e.target.style.borderColor=C.b}/></div>
-            <Btn v="primary" sm>{I.plus} New</Btn>
           </div>
         </header>
 
