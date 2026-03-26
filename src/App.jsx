@@ -160,7 +160,6 @@ function App({ session }){
               <select value={pSort} onChange={e=>setPSort(e.target.value)} style={{padding:"4px 8px",borderRadius:6,border:`1px solid ${C.b}`,fontSize:10,fontFamily:F,color:C.t2,background:"#fff",cursor:"pointer"}}>
                 <option value="name">Sort: Name</option><option value="stage">Sort: Stage</option><option value="budget">Sort: Budget</option>
               </select>
-              <Btn sm onClick={()=>setModal({t:"addProject"})}>{I.plus} New Project</Btn>
             </div>}><Table cols={[
               {label:"Project",render:r=><div><div style={{fontWeight:600}}>{r.name}</div><div style={{fontSize:10,color:C.t3}}>{gc(r.cl)?.name}</div></div>},
               {label:"Stage",render:r=><StB stage={r.stage}/>},
@@ -189,7 +188,6 @@ function App({ session }){
               <select value={tSort} onChange={e=>setTSort(e.target.value)} style={{padding:"4px 8px",borderRadius:6,border:`1px solid ${C.b}`,fontSize:10,fontFamily:F,color:C.t2,background:"#fff",cursor:"pointer"}}>
                 <option value="title">Sort: Name</option><option value="status">Sort: Status</option><option value="priority">Sort: Priority</option><option value="due">Sort: Due Date</option>
               </select>
-              <Btn sm onClick={()=>setModal({t:"addTask",projectId:_PROJECTS[0]?.id})}>{I.plus} Task</Btn>
             </div>}><Table cols={[
               {label:"Task",render:r=><span style={{fontWeight:500}}>{r.title}</span>},
               {label:"Project / Client",render:r=>{const proj=_PROJECTS.find(p=>p.tasks.some(t=>t.id===r.id));const cl=proj?gc(proj.cl):null;return<div><div style={{fontSize:11,color:C.t2}}>{proj?.name||"—"}</div>{cl&&<div style={{fontSize:10,color:C.t3}}>{cl.name}</div>}</div>}},
