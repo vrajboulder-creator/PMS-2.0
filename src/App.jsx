@@ -150,7 +150,7 @@ function App({ session }){
             {label:"Project",render:r=><div><div style={{fontWeight:600}}>{r.name}</div><div style={{fontSize:10,color:C.t3}}>{gc(r.cl)?.name}</div></div>},
             {label:"Stage",render:r=><StB stage={r.stage}/>},
             {label:"PM",render:r=>{const m=gm(r.pm);return m?<div style={{display:"flex",alignItems:"center",gap:5}}><Av m={m} sz={20}/><span style={{fontSize:11}}>{m.name}</span></div>:null}},
-            {label:"Team",render:r=><AvStack ids={r.team}/>},
+            {label:"Team",render:r=><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{r.team.map(id=>{const m=gm(id);return m?<div key={id} style={{display:"flex",alignItems:"center",gap:3}}><Av m={m} sz={18}/><span style={{fontSize:10,color:C.t2}}>{m.name}</span></div>:null})}</div>},
             {label:"Tasks",render:r=><span style={{fontFamily:M,fontSize:11}}>{r.tasks.filter(t=>t.st==="done").length}/{r.tasks.length}</span>},
             {label:"Budget",render:r=><span style={{fontFamily:M,fontSize:11}}>{r.budget}</span>},
             {label:"",render:r=><div style={{display:"flex",gap:4}}><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"editProject",data:r})}}>Edit</Btn><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"deleteProject",id:r.id,name:r.name})}}>Delete</Btn></div>},
