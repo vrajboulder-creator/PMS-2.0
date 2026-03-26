@@ -187,6 +187,9 @@ export function useProjects() {
   };
 
   const updateProject = async (id, updates) => {
+    // Optimistic local update — instant UI
+    setProjects(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+
     const mapped = {};
     if (updates.name !== undefined) mapped.name = updates.name;
     if (updates.stage !== undefined) mapped.stage = updates.stage;
@@ -201,7 +204,6 @@ export function useProjects() {
     if (updates.target !== undefined) mapped.target_date = updates.target;
 
     await supabase.from("projects").update(mapped).eq("id", id);
-    refresh();
   };
 
   const deleteProject = async (id) => {
