@@ -105,7 +105,7 @@ export default function PipelineView({ onOpen, onStageChange, onAdd }) {
                 onMouseOut={e => { if (!dragId) { e.currentTarget.style.borderColor = C.b2; e.currentTarget.style.boxShadow = "none" } }}
               >
                 <div onClick={() => onOpen(p.id)} style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 6 }}>
-                  <span style={{ fontSize: 11.5, fontWeight: 600, lineHeight: 1.3, flex: 1, minWidth: 0 }}>{p.name}</span><div style={{ flexShrink: 0 }}><HB h={p.health} /></div>
+                  <span style={{ fontSize: 11.5, fontWeight: 600, lineHeight: 1.3, flex: 1, minWidth: 0 }}>{p.name}</span>
                 </div>
                 <div onClick={() => onOpen(p.id)} style={{ fontSize: 10, color: C.t3, marginBottom: 8 }}>{gc(p.cl)?.name}</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
