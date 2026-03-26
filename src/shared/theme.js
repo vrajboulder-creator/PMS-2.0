@@ -16,4 +16,4 @@ export const C={
 export const shadow="0 1px 3px rgba(0,0,0,0.04),0 1px 2px rgba(0,0,0,0.02)";
 export const shadowHover="0 2px 8px rgba(0,0,0,0.06),0 1px 3px rgba(0,0,0,0.04)";
 
-export const SC={Lead:"#9ca1ab",Discovery:"#7c3aed",Proposal:"#3b82f6","Awaiting Approval":"#b45309",Build:"#0891b2","Internal Review":"#7c3aed","Client Review":"#b45309","QA / UAT":"#c2410c",Deployment:"#16a34a","Ongoing Support":"#16a34a",Completed:"#16a34a","On Hold":"#9ca1ab",Blocked:"#dc2626"};
+export const SC={Lead:"#9ca1ab",Discovery:"#7c3aed",Proposal:"#3b82f6","Awaiting Approval":"#b45309",Build:"#0891b2",Revision:"#b45309","Internal Review":"#7c3aed","Client Review":"#b45309","QA / UAT":"#c2410c",Deployment:"#16a34a","Ongoing Support":"#16a34a",Completed:"#16a34a","On Hold":"#9ca1ab",Blocked:"#dc2626"};

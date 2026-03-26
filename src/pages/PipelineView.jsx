@@ -5,7 +5,7 @@ import { _PROJECTS, gc } from "../shared/store";
 import { HB, AvStack, Btn } from "../components/ui";
 
 export default function PipelineView({ onOpen, onStageChange, onAdd }) {
-  const stages = ["Lead", "Proposal", "Build", "Client Review", "QA / UAT", "Completed"];
+  const stages = ["Lead", "Proposal", "Build", "Revision", "Client Review", "QA / UAT", "Completed"];
   const [dragId, setDragId] = useState(null);
   const [overStage, setOverStage] = useState(null);
   const [overIdx, setOverIdx] = useState(null);
@@ -65,7 +65,7 @@ export default function PipelineView({ onOpen, onStageChange, onAdd }) {
 
   return <div>
     <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}><Btn sm onClick={onAdd}>{I.plus} New Project</Btn></div>
-    <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 16, minHeight: "65vh" }}>
+    <div style={{ display: "flex", gap: 10, paddingBottom: 16, minHeight: "calc(100vh - 160px)" }}>
       {stages.map(s => {
         const prj = _PROJECTS.filter(p => p.stage === s);
         const c = SC[s];
@@ -78,10 +78,10 @@ export default function PipelineView({ onOpen, onStageChange, onAdd }) {
           onDragLeave={e => onColumnDragLeave(e, s)}
           onDrop={e => onColumnDrop(e, s)}
           style={{
-            minWidth: 230, maxWidth: 250, background: isOver ? C.aSoft : "#fff",
+            flex: 1, minWidth: 0, background: isOver ? C.aSoft : "#fff",
             borderRadius: 10, border: `1px solid ${isOver ? C.a : C.b}`,
-            display: "flex", flexDirection: "column", flexShrink: 0, boxShadow: shadow,
-            transition: "all .2s ease",
+            display: "flex", flexDirection: "column", boxShadow: shadow,
+            transition: "all .2s ease", overflow: "hidden",
           }}>
           <div style={{ padding: "11px 14px", borderBottom: `1px solid ${isOver ? `${C.a}40` : C.b2}`, display: "flex", alignItems: "center", gap: 7 }}>
             <div style={{ width: 8, height: 8, borderRadius: 2, background: c }} />

@@ -1,13 +1,68 @@
+import { useState, useRef, useCallback } from "react";
 import { C, F, M, shadow } from "../shared/theme";
 import { I } from "../shared/icons";
 import { _TEAM, gc, gm } from "../shared/store";
 import { Av, AvStack, HB, SB, PB, StB, FI, Badge, Btn, Panel, Table } from "../components/ui";
 
-export default function ProjectDetail({ p, tab, setTab, exT, tT, exS, tS, onEdit, onDelete, onAddTask, onEditTask, onDeleteTask, onUpdateTask, onAddComment }) {
+const MicBtn = ({ onResult, listening, onToggle }) => (
+  <button onClick={onToggle} title={listening ? "Stop dictating" : "Dictate"} style={{
+    background: listening ? C.r : "none", border: `1px solid ${listening ? C.r : C.b}`,
+    borderRadius: 6, padding: "5px 8px", cursor: "pointer", color: listening ? "#fff" : C.t3,
+    display: "inline-flex", alignItems: "center", transition: "all .15s",
+  }}>
+    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+      <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+      <path d="M19 10v2a7 7 0 01-14 0v-2" />
+      <line x1="12" y1="19" x2="12" y2="23" />
+      <line x1="8" y1="23" x2="16" y2="23" />
+    </svg>
+  </button>
+);
+
+export default function ProjectDetail({ p, exT, tT, exS, tS, onEdit, onDelete, onAddTask, onEditTask, onDeleteTask, onUpdateTask, onAddComment, onUpdateProject }) {
+  const [newObj, setNewObj] = useState("");
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef(null);
+
+  const toggleDictate = useCallback(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) { alert("Speech recognition is not supported in this browser."); return; }
+
+    if (listening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setNewObj(prev => prev ? prev + " " + transcript : transcript);
+    };
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setListening(true);
+  }, [listening]);
+
   if (!p) return null;
   const cl = gc(p.cl), pm = gm(p.pm);
   const done = p.tasks.filter(t => t.st === "done").length, total = p.tasks.length;
-  const tabs = ["overview", "tasks", "deliverables", "automations", "issues", "activity", "files"];
+
+  const addObjective = () => {
+    if (!newObj.trim()) return;
+    const updated = [...(p.obj || []), newObj.trim()];
+    onUpdateProject(p.id, { obj: updated });
+    setNewObj("");
+  };
+  const removeObjective = (idx) => {
+    const updated = (p.obj || []).filter((_, i) => i !== idx);
+    onUpdateProject(p.id, { obj: updated });
+  };
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
     {/* Header */}
@@ -26,21 +81,33 @@ export default function ProjectDetail({ p, tab, setTab, exT, tT, exS, tS, onEdit
         <div style={{ height: 5, borderRadius: 3, background: C.s3 }}><div style={{ height: "100%", borderRadius: 3, background: C.g, width: `${(done / total) * 100}%`, transition: "width .3s" }} /></div></div>}
     </div>
 
-    {/* Tabs */}
-    <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${C.b}` }}>{tabs.map(t => <button key={t} onClick={() => setTab(t)} style={{ padding: "9px 16px", background: "none", border: "none", borderBottom: `2px solid ${tab === t ? C.a : "transparent"}`, color: tab === t ? C.t : C.t2, fontSize: 12.5, fontWeight: tab === t ? 600 : 400, cursor: "pointer", fontFamily: F, textTransform: "capitalize", transition: "all .12s" }}>{t}</button>)}</div>
+    {/* ═══ ALL SECTIONS STACKED VERTICALLY ═══ */}
 
-    {/* Overview */}
-    {tab === "overview" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-      <Panel title="Objectives">{p.obj?.map((o, i) => <div key={i} style={{ display: "flex", gap: 8, fontSize: 12, marginBottom: 4 }}><span style={{ color: C.g }}>◆</span>{o}</div>)}</Panel>
-      <Panel title="Key Risks">{p.risks?.length ? p.risks.map((r, i) => <div key={i} style={{ display: "flex", gap: 8, fontSize: 12, marginBottom: 4 }}><span style={{ color: C.y }}>{I.alert}</span>{r}</div>) : <span style={{ fontSize: 12, color: C.t3 }}>None identified</span>}</Panel>
-      {p.issues.length > 0 && <Panel noPad title="Open Issues" style={{ gridColumn: "span 2" }}><Table cols={[
-        { label: "Issue", render: r => <span style={{ fontWeight: 500 }}>{r.title}</span> },
-        { label: "Type", render: r => <Badge sm>{r.tp}</Badge> }, { label: "Severity", render: r => <Badge sm color={r.sev === "critical" ? C.r : r.sev === "high" ? C.o : C.y}>{r.sev}</Badge> },
-      ]} rows={p.issues} /></Panel>}
-    </div>}
+    {/* Objectives — editable */}
+    <Panel title="Objectives" actions={<span style={{ fontSize: 10, color: C.t3 }}>{(p.obj || []).length} items</span>}>
+      {(p.obj || []).map((o, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, marginBottom: 6, padding: "4px 0" }}>
+        <span style={{ color: C.g, flexShrink: 0 }}>◆</span>
+        <span style={{ flex: 1 }}>{o}</span>
+        <button onClick={() => removeObjective(i)} style={{ background: "none", border: "none", cursor: "pointer", color: C.t3, padding: 0, flexShrink: 0 }} title="Remove">{I.x}</button>
+      </div>)}
+      <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+        <input value={newObj} onChange={e => setNewObj(e.target.value)} onKeyDown={e => { if (e.key === "Enter") addObjective() }} placeholder={listening ? "Listening..." : "Add an objective..."} style={{ flex: 1, padding: "7px 12px", borderRadius: 6, border: `1px solid ${listening ? C.r : C.b}`, fontSize: 11, fontFamily: F, color: C.t, outline: "none", transition: "border-color .2s" }} onFocus={e => { if (!listening) e.target.style.borderColor = C.bFocus }} onBlur={e => { if (!listening) e.target.style.borderColor = C.b }} />
+        <MicBtn listening={listening} onToggle={toggleDictate} />
+        <Btn sm v="primary" onClick={addObjective}>{I.plus} Add</Btn>
+      </div>
+    </Panel>
+
+    {/* Key Risks */}
+    <Panel title="Key Risks">{p.risks?.length ? p.risks.map((r, i) => <div key={i} style={{ display: "flex", gap: 8, fontSize: 12, marginBottom: 4 }}><span style={{ color: C.y }}>{I.alert}</span>{r}</div>) : <span style={{ fontSize: 12, color: C.t3 }}>None identified</span>}</Panel>
+
+    {/* Open Issues */}
+    {p.issues.length > 0 && <Panel noPad title={`Open Issues (${p.issues.length})`}><Table cols={[
+      { label: "Issue", render: r => <span style={{ fontWeight: 500 }}>{r.title}</span> },
+      { label: "Type", render: r => <Badge sm>{r.tp}</Badge> }, { label: "Severity", render: r => <Badge sm color={r.sev === "critical" ? C.r : r.sev === "high" ? C.o : C.y}>{r.sev}</Badge> },
+    ]} rows={p.issues} /></Panel>}
 
     {/* Tasks */}
-    {tab === "tasks" && <Panel noPad title={`Tasks (${total})`} actions={<Btn sm onClick={() => onAddTask(p.id)}>{I.plus} Add Task</Btn>}>
+    <Panel noPad title={`Tasks (${total})`} actions={<Btn sm onClick={() => onAddTask(p.id)}>{I.plus} Add Task</Btn>}>
       {p.tasks.map(task => { const ow = gm(task.ow), isEx = exT[task.id];
         return <div key={task.id} style={{ borderBottom: `1px solid ${C.b2}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer" }} onClick={() => tT(task.id)}
@@ -103,26 +170,26 @@ export default function ProjectDetail({ p, tab, setTab, exT, tT, exS, tS, onEdit
           {isEx && (!task.subs || !task.subs.length) && <div style={{ marginLeft: 34, padding: "8px 14px 12px" }}><Btn sm v="ghost" style={{ fontSize: 10 }}>{I.plus} Add Sub-task</Btn></div>}
         </div> })}
       {!total && <div style={{ padding: 28, textAlign: "center", color: C.t3, fontSize: 12 }}>No tasks yet.</div>}
-    </Panel>}
+    </Panel>
 
-    {tab === "deliverables" && <Panel noPad title="Deliverables">{p.deliverables.length ? <Table cols={[
+    {/* Deliverables */}
+    <Panel noPad title="Deliverables">{p.deliverables.length ? <Table cols={[
       { label: "Name", render: r => <span style={{ fontWeight: 500 }}>{r.n}</span> }, { label: "Type", render: r => <Badge sm>{r.tp}</Badge> }, { label: "Status", render: r => <Badge sm>{r.st}</Badge> }, { label: "Version", render: r => <span style={{ fontFamily: M, fontSize: 11 }}>{r.v}</span> },
-    ]} rows={p.deliverables} /> : <div style={{ padding: 28, textAlign: "center", color: C.t3, fontSize: 12 }}>None tracked</div>}</Panel>}
+    ]} rows={p.deliverables} /> : <div style={{ padding: 20, textAlign: "center", color: C.t3, fontSize: 12 }}>None tracked</div>}</Panel>
 
-    {tab === "automations" && <Panel noPad title="Automations">{p.autos.length ? <Table cols={[
+    {/* Automations */}
+    <Panel noPad title="Automations">{p.autos.length ? <Table cols={[
       { label: "Name", render: r => <span style={{ fontWeight: 500 }}>{r.n}</span> }, { label: "Platform", render: r => <Badge sm>{r.pl}</Badge> }, { label: "Status", render: r => <Badge sm color={r.st === "deployed" ? C.g : r.st === "in-dev" ? C.a : C.t2}>{r.st}</Badge> },
-    ]} rows={p.autos} /> : <div style={{ padding: 28, textAlign: "center", color: C.t3, fontSize: 12 }}>None tracked</div>}</Panel>}
+    ]} rows={p.autos} /> : <div style={{ padding: 20, textAlign: "center", color: C.t3, fontSize: 12 }}>None tracked</div>}</Panel>
 
-    {tab === "issues" && <Panel noPad title="Issues">{p.issues.length ? <Table cols={[
-      { label: "Issue", render: r => <span style={{ fontWeight: 500 }}>{r.title}</span> }, { label: "Type", render: r => <Badge sm>{r.tp}</Badge> }, { label: "Severity", render: r => <Badge sm color={r.sev === "critical" ? C.r : C.y}>{r.sev}</Badge> },
-    ]} rows={p.issues} /> : <div style={{ padding: 28, textAlign: "center", color: C.t3, fontSize: 12 }}>No issues</div>}</Panel>}
-
-    {tab === "activity" && <Panel title="Activity">{p.activity.length ? p.activity.map((a, i) => <div key={i} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: i < p.activity.length - 1 ? `1px solid ${C.b2}` : "none" }}>
+    {/* Activity */}
+    <Panel title="Activity">{p.activity.length ? p.activity.map((a, i) => <div key={i} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: i < p.activity.length - 1 ? `1px solid ${C.b2}` : "none" }}>
       <div style={{ width: 6, height: 6, borderRadius: "50%", background: a.x === "task" ? C.g : a.x === "comment" ? C.a : a.x === "status" || a.x === "issue" ? C.r : C.p, marginTop: 5, flexShrink: 0 }} />
       <div><div style={{ fontSize: 12 }}>{a.t}</div><div style={{ fontSize: 10, color: C.t3 }}>{a.w}</div></div>
-    </div>) : <div style={{ color: C.t3, fontSize: 12 }}>No activity</div>}</Panel>}
+    </div>) : <div style={{ color: C.t3, fontSize: 12 }}>No activity</div>}</Panel>
 
-    {tab === "files" && <Panel title="All Files" actions={<Btn sm>{I.plus} Upload</Btn>}>
+    {/* Files */}
+    <Panel title="All Files" actions={<Btn sm>{I.plus} Upload</Btn>}>
       {p.tasks.flatMap(t => (t.subs || []).flatMap(s => (s.files || []).map(f => ({ ...f, sub: s.title, task: t.title })))).map((f, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", borderRadius: 6, border: `1px solid ${C.b2}`, marginBottom: 4, background: C.s2 }}>
         <FI t={f.t} /><span style={{ flex: 1, fontSize: 11, fontWeight: 500 }}>{f.n}</span>
         <span style={{ fontSize: 10, color: C.t3 }}>{f.task} → {f.sub}</span>
@@ -130,6 +197,6 @@ export default function ProjectDetail({ p, tab, setTab, exT, tT, exS, tS, onEdit
         <button style={{ background: "none", border: "none", cursor: "pointer", color: C.t3 }}>{I.dl}</button>
       </div>)}
       {!p.tasks.flatMap(t => (t.subs || []).flatMap(s => s.files || [])).length && <div style={{ textAlign: "center", color: C.t3, fontSize: 12, padding: 20 }}>No files</div>}
-    </Panel>}
+    </Panel>
   </div>;
 }
