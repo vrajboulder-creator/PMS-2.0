@@ -92,8 +92,85 @@ function EditableList({ title, items, icon, iconColor, placeholder, onAdd, onRem
   );
 }
 
+/* ═══ ISSUE SECTION — with dictate input ═══ */
+function IssueSection({ issues, projectId, onAddIssue }) {
+  const [val, setVal] = useState("");
+  const [interim, setInterim] = useState("");
+  const handleText = useCallback((text, isInterim) => {
+    if (isInterim) setInterim(text); else { setInterim(""); setVal(prev => prev ? prev + " " + text : text); }
+  }, []);
+  const { listening, toggle } = useDictate(handleText);
+  const add = () => { if (!val.trim()) return; onAddIssue({ project_id: projectId, title: val.trim(), tp: "risk", sev: "medium", ow: _TEAM[0]?.id, st: "open" }); setVal(""); };
+  return <Panel title={`Issues (${issues.length})`}>
+    {issues.map((r, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, marginBottom: 6 }}>
+      <span style={{ color: C.r, flexShrink: 0 }}>{I.issues}</span>
+      <span style={{ flex: 1 }}>{r.title}</span>
+      <Badge sm color={r.sev === "critical" ? C.r : r.sev === "high" ? C.o : C.y}>{r.sev}</Badge>
+      <Badge sm color={r.st === "open" ? C.r : C.g}>{r.st}</Badge>
+    </div>)}
+    <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+      <div style={{ flex: 1, position: "relative" }}>
+        <input value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => { if (e.key === "Enter") add() }}
+          placeholder={listening ? "Listening..." : "Add an issue..."} style={{ width: "100%", padding: "7px 12px", borderRadius: 6, border: `1px solid ${listening ? C.r : C.b}`, fontSize: 11, fontFamily: F, color: C.t, outline: "none", boxSizing: "border-box" }}
+          onFocus={e => { if (!listening) e.target.style.borderColor = C.bFocus }} onBlur={e => { if (!listening) e.target.style.borderColor = C.b }} />
+        {listening && interim && <div style={{ position: "absolute", left: 12, bottom: -16, fontSize: 10, color: C.t3, fontStyle: "italic" }}>{interim}...</div>}
+      </div>
+      <MicBtn listening={listening} onToggle={toggle} />
+      <Btn sm v="primary" onClick={add}>{I.plus} Add</Btn>
+    </div>
+  </Panel>;
+}
+
+/* ═══ SUBTASK ADD — inline with dictate ═══ */
+function SubtaskAdd({ taskId, onAddSubtask }) {
+  const [val, setVal] = useState("");
+  const [interim, setInterim] = useState("");
+  const handleText = useCallback((text, isInterim) => {
+    if (isInterim) setInterim(text); else { setInterim(""); setVal(prev => prev ? prev + " " + text : text); }
+  }, []);
+  const { listening, toggle } = useDictate(handleText);
+  const add = () => { if (!val.trim()) return; onAddSubtask({ id: "s" + Date.now(), task_id: taskId, title: val.trim(), st: "todo", ow: _TEAM[0]?.id }); setVal(""); };
+  return <div style={{ marginLeft: 34, padding: "6px 14px 10px", display: "flex", gap: 6 }}>
+    <div style={{ flex: 1, position: "relative" }}>
+      <input value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => { if (e.key === "Enter") add() }}
+        placeholder={listening ? "Listening..." : "Add sub-task..."} style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: `1px solid ${listening ? C.r : C.b}`, fontSize: 10, fontFamily: F, color: C.t, outline: "none", boxSizing: "border-box" }}
+        onFocus={e => { if (!listening) e.target.style.borderColor = C.bFocus }} onBlur={e => { if (!listening) e.target.style.borderColor = C.b }} />
+      {listening && interim && <div style={{ position: "absolute", left: 10, bottom: -14, fontSize: 9, color: C.t3, fontStyle: "italic" }}>{interim}...</div>}
+    </div>
+    <MicBtn listening={listening} onToggle={toggle} />
+    <Btn sm v="ghost" onClick={add}>{I.plus} Add</Btn>
+  </div>;
+}
+
+/* ═══ ACTIVITY SECTION — with dictate add ═══ */
+function ActivitySection({ activity, projectId, onAddActivity }) {
+  const [val, setVal] = useState("");
+  const [interim, setInterim] = useState("");
+  const handleText = useCallback((text, isInterim) => {
+    if (isInterim) setInterim(text); else { setInterim(""); setVal(prev => prev ? prev + " " + text : text); }
+  }, []);
+  const { listening, toggle } = useDictate(handleText);
+  const add = () => { if (!val.trim()) return; onAddActivity(projectId, "comment", val.trim(), "Just now"); setVal(""); };
+  return <Panel title={`Activity (${activity.length})`}>
+    {activity.length ? activity.map((a, i) => <div key={i} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: i < activity.length - 1 ? `1px solid ${C.b2}` : "none" }}>
+      <div style={{ width: 6, height: 6, borderRadius: "50%", background: a.x === "task" ? C.g : a.x === "comment" ? C.a : a.x === "status" || a.x === "issue" ? C.r : C.p, marginTop: 5, flexShrink: 0 }} />
+      <div><div style={{ fontSize: 12 }}>{a.t}</div><div style={{ fontSize: 10, color: C.t3 }}>{a.w}</div></div>
+    </div>) : <div style={{ color: C.t3, fontSize: 12, marginBottom: 8 }}>No activity</div>}
+    <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+      <div style={{ flex: 1, position: "relative" }}>
+        <input value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => { if (e.key === "Enter") add() }}
+          placeholder={listening ? "Listening..." : "Add activity note..."} style={{ width: "100%", padding: "7px 12px", borderRadius: 6, border: `1px solid ${listening ? C.r : C.b}`, fontSize: 11, fontFamily: F, color: C.t, outline: "none", boxSizing: "border-box" }}
+          onFocus={e => { if (!listening) e.target.style.borderColor = C.bFocus }} onBlur={e => { if (!listening) e.target.style.borderColor = C.b }} />
+        {listening && interim && <div style={{ position: "absolute", left: 12, bottom: -16, fontSize: 10, color: C.t3, fontStyle: "italic" }}>{interim}...</div>}
+      </div>
+      <MicBtn listening={listening} onToggle={toggle} />
+      <Btn sm v="primary" onClick={add}>{I.plus} Add</Btn>
+    </div>
+  </Panel>;
+}
+
 /* ═══ PROJECT DETAIL ═══ */
-export default function ProjectDetail({ p, exT, tT, exS, tS, onEdit, onDelete, onAddTask, onEditTask, onDeleteTask, onUpdateTask, onAddComment, onUpdateProject }) {
+export default function ProjectDetail({ p, exT, tT, exS, tS, onEdit, onDelete, onAddTask, onEditTask, onDeleteTask, onUpdateTask, onAddComment, onUpdateProject, onAddIssue, onAddSubtask, onAddActivity }) {
   if (!p) return null;
   const cl = gc(p.cl), pm = gm(p.pm);
   const done = p.tasks.filter(t => t.st === "done").length, total = p.tasks.length;
@@ -127,15 +204,8 @@ export default function ProjectDetail({ p, exT, tT, exS, tS, onEdit, onDelete, o
       onAdd={text => updateList("risks", [...(p.risks || []), text])}
       onRemove={i => updateList("risks", (p.risks || []).filter((_, idx) => idx !== i))} />
 
-    {/* Open Issues — editable */}
-    <Panel noPad title={`Issues (${p.issues.length})`}>
-      {p.issues.length ? <Table cols={[
-        { label: "Issue", render: r => <span style={{ fontWeight: 500 }}>{r.title}</span> },
-        { label: "Type", render: r => <Badge sm>{r.tp}</Badge> },
-        { label: "Severity", render: r => <Badge sm color={r.sev === "critical" ? C.r : r.sev === "high" ? C.o : C.y}>{r.sev}</Badge> },
-        { label: "Status", render: r => <Badge sm color={r.st === "open" ? C.r : C.g}>{r.st}</Badge> },
-      ]} rows={p.issues} /> : <div style={{ padding: 20, textAlign: "center", color: C.t3, fontSize: 12 }}>No issues</div>}
-    </Panel>
+    {/* Issues — with dictate add */}
+    <IssueSection issues={p.issues} projectId={p.id} onAddIssue={onAddIssue} />
 
     {/* Tasks */}
     <Panel noPad title={`Tasks (${total})`} actions={<Btn sm onClick={() => onAddTask(p.id)}>{I.plus} Add Task</Btn>}>
@@ -198,26 +268,23 @@ export default function ProjectDetail({ p, exT, tT, exS, tS, onEdit, onDelete, o
                 </div>}
               </div> })}
           </div>}
-          {isEx && (!task.subs || !task.subs.length) && <div style={{ marginLeft: 34, padding: "8px 14px 12px" }}><Btn sm v="ghost" style={{ fontSize: 10 }}>{I.plus} Add Sub-task</Btn></div>}
+          {isEx && <SubtaskAdd taskId={task.id} onAddSubtask={onAddSubtask} />}
         </div> })}
       {!total && <div style={{ padding: 28, textAlign: "center", color: C.t3, fontSize: 12 }}>No tasks yet.</div>}
     </Panel>
 
     {/* Deliverables */}
-    <Panel noPad title="Deliverables">{p.deliverables.length ? <Table cols={[
+    <Panel noPad title={`Deliverables (${p.deliverables.length})`}>{p.deliverables.length ? <Table cols={[
       { label: "Name", render: r => <span style={{ fontWeight: 500 }}>{r.n}</span> }, { label: "Type", render: r => <Badge sm>{r.tp}</Badge> }, { label: "Status", render: r => <Badge sm>{r.st}</Badge> }, { label: "Version", render: r => <span style={{ fontFamily: M, fontSize: 11 }}>{r.v}</span> },
     ]} rows={p.deliverables} /> : <div style={{ padding: 20, textAlign: "center", color: C.t3, fontSize: 12 }}>None tracked</div>}</Panel>
 
     {/* Automations */}
-    <Panel noPad title="Automations">{p.autos.length ? <Table cols={[
+    <Panel noPad title={`Automations (${p.autos.length})`}>{p.autos.length ? <Table cols={[
       { label: "Name", render: r => <span style={{ fontWeight: 500 }}>{r.n}</span> }, { label: "Platform", render: r => <Badge sm>{r.pl}</Badge> }, { label: "Status", render: r => <Badge sm color={r.st === "deployed" ? C.g : r.st === "in-dev" ? C.a : C.t2}>{r.st}</Badge> },
     ]} rows={p.autos} /> : <div style={{ padding: 20, textAlign: "center", color: C.t3, fontSize: 12 }}>None tracked</div>}</Panel>
 
-    {/* Activity */}
-    <Panel title="Activity">{p.activity.length ? p.activity.map((a, i) => <div key={i} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: i < p.activity.length - 1 ? `1px solid ${C.b2}` : "none" }}>
-      <div style={{ width: 6, height: 6, borderRadius: "50%", background: a.x === "task" ? C.g : a.x === "comment" ? C.a : a.x === "status" || a.x === "issue" ? C.r : C.p, marginTop: 5, flexShrink: 0 }} />
-      <div><div style={{ fontSize: 12 }}>{a.t}</div><div style={{ fontSize: 10, color: C.t3 }}>{a.w}</div></div>
-    </div>) : <div style={{ color: C.t3, fontSize: 12 }}>No activity</div>}</Panel>
+    {/* Activity — with dictate add */}
+    <ActivitySection activity={p.activity} projectId={p.id} onAddActivity={onAddActivity} />
 
     {/* Files */}
     <Panel title="All Files" actions={<Btn sm>{I.plus} Upload</Btn>}>
