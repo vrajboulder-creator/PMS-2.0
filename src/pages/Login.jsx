@@ -8,6 +8,7 @@ export default function Login() {
       provider: "azure",
       options: {
         scopes: "email profile openid",
+        redirectTo: window.location.origin,
       },
     });
     if (error) console.error("Login error:", error.message);

@@ -30,7 +30,23 @@ export function useTeam() {
     refresh();
   };
 
-  return { team: data, loading, refresh, updateHours };
+  const addTeamMember = async (member) => {
+    const { error } = await supabase.from("team").insert(member);
+    if (!error) refresh();
+    return error;
+  };
+
+  const updateTeamMember = async (id, updates) => {
+    await supabase.from("team").update(updates).eq("id", id);
+    refresh();
+  };
+
+  const deleteTeamMember = async (id) => {
+    await supabase.from("team").delete().eq("id", id);
+    refresh();
+  };
+
+  return { team: data, loading, refresh, updateHours, addTeamMember, updateTeamMember, deleteTeamMember };
 }
 
 // ═══ CLIENTS ═══

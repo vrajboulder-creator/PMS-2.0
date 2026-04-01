@@ -8,6 +8,7 @@ import { Av, AvStack, SB, PB, StB, Badge, Btn, Panel, Table, ConfirmDelete } fro
 import ClientForm from "./components/forms/ClientForm";
 import ProjectForm from "./components/forms/ProjectForm";
 import TaskForm from "./components/forms/TaskForm";
+import TeamForm from "./components/forms/TeamForm";
 import Dashboard from "./pages/Dashboard";
 import ClientDetail from "./pages/ClientDetail";
 import ProjectDetail from "./pages/ProjectDetail";
@@ -45,7 +46,7 @@ export default AuthGate;
 function App({ session }){
   const handleLogout = async () => { await supabase.auth.signOut(); };
 
-  const { team } = useTeam();
+  const { team, addTeamMember, updateTeamMember, deleteTeamMember } = useTeam();
   const { clients, addClient, updateClient, deleteClient } = useClients();
   const { projects,
     addProject, updateProject, deleteProject,
@@ -87,6 +88,10 @@ function App({ session }){
   const handleEditProject=async(id,f)=>{await updateProject(id,{name:f.name,stage:f.stage,health:f.health,pm:f.pm,team:f.team,type:f.type,budget:f.budget,desc:f.desc,target:f.target});setModal(null);};
   const handleDeleteProject=async(id)=>{await deleteProject(id);setModal(null);setDetail(null);};
   const handleStageChange=async(id,stage)=>{await updateProject(id,{stage});};
+
+  const handleAddTeamMember=async(f)=>{const id="tm"+Date.now();await addTeamMember({id,...f});setModal(null);};
+  const handleEditTeamMember=async(id,f)=>{await updateTeamMember(id,f);setModal(null);};
+  const handleDeleteTeamMember=async(id)=>{await deleteTeamMember(id);setModal(null);};
 
   const handleAddTask=async(f)=>{const id="t"+Date.now();await addTask({id,project_id:f.project_id,title:f.title,st:f.st||"todo",pr:f.pr||"medium",ow:f.ow,due:f.due,est:Number(f.est)||0,act:0});setModal(null);};
   const handleEditTask=async(id,f)=>{await updateTask(id,{title:f.title,st:f.st,pr:f.pr,ow:f.ow,due:f.due,est:Number(f.est)||undefined,act:Number(f.act)||undefined});setModal(null);};
@@ -208,7 +213,7 @@ function App({ session }){
           ]} rows={allI}/></Panel>}
 
           {/* ═══ TEAM ═══ */}
-          {nav==="team"&&!detail&&<TeamView/>}
+          {nav==="team"&&!detail&&<TeamView onAdd={()=>setModal({t:"addTeam"})} onEdit={m=>setModal({t:"editTeam",data:m})} onDelete={m=>setModal({t:"deleteTeam",id:m.id,name:m.name})}/>}
 
           {/* ═══ DELIVERABLES / AUTOMATIONS ═══ */}
           {nav==="deliverables"&&!detail&&<Panel noPad title="Deliverables"><Table cols={[
@@ -238,6 +243,10 @@ function App({ session }){
       {modal?.t==="addTask"&&<TaskForm projectId={modal.projectId} onSave={handleAddTask} onClose={()=>setModal(null)}/>}
       {modal?.t==="editTask"&&<TaskForm data={modal.data} onSave={f=>handleEditTask(modal.data.id,f)} onClose={()=>setModal(null)}/>}
       {modal?.t==="deleteTask"&&<ConfirmDelete what={`Task "${modal.name}"`} onConfirm={()=>handleDeleteTask(modal.id)} onClose={()=>setModal(null)}/>}
+
+      {modal?.t==="addTeam"&&<TeamForm onSave={handleAddTeamMember} onClose={()=>setModal(null)}/>}
+      {modal?.t==="editTeam"&&<TeamForm data={modal.data} onSave={f=>handleEditTeamMember(modal.data.id,f)} onClose={()=>setModal(null)}/>}
+      {modal?.t==="deleteTeam"&&<ConfirmDelete what={`Team Member "${modal.name}"`} onConfirm={()=>handleDeleteTeamMember(modal.id)} onClose={()=>setModal(null)}/>}
     </div>
   );
 }
