@@ -65,11 +65,11 @@ function App({ session }){
 
   const[nav,setNav]=useState("dashboard");
   const[detail,setDetail]=useState(null);
-  const sq=search.toLowerCase().trim();
 
   const[exT,setExT]=useState({});
   const[exS,setExS]=useState({});
   const[search,setSearch]=useState("");
+  const sq=search.toLowerCase().trim();
   const[modal,setModal]=useState(null);
   const[pSort,setPSort]=useState("name");
   const[pFilter,setPFilter]=useState("all");
