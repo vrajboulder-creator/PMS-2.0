@@ -65,6 +65,7 @@ function App({ session }){
 
   const[nav,setNav]=useState("dashboard");
   const[detail,setDetail]=useState(null);
+  const sq=search.toLowerCase().trim();
 
   const[exT,setExT]=useState({});
   const[exS,setExS]=useState({});
@@ -72,6 +73,7 @@ function App({ session }){
   const[modal,setModal]=useState(null);
   const[pSort,setPSort]=useState("name");
   const[pFilter,setPFilter]=useState("all");
+  const[pTab,setPTab]=useState("active");
   const[tSort,setTSort]=useState("title");
   const[tFilter,setTFilter]=useState("all");
   const tT=id=>setExT(p=>({...p,[id]:!p[id]}));
@@ -112,7 +114,7 @@ function App({ session }){
           {NAV.map((item,idx)=>{
             if(item.sec!==undefined)return<div key={idx} style={{fontSize:9,fontWeight:600,color:C.t3,letterSpacing:"0.08em",textTransform:"uppercase",padding:"14px 8px 5px"}}>{item.sec}</div>;
             const act=nav===item.k&&!detail;
-            return<button key={item.k} onClick={()=>{setNav(item.k);setDetail(null)}} style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"7px 10px",borderRadius:7,border:"none",background:act?C.aSoft:"transparent",color:act?C.a:C.t2,fontSize:12.5,fontWeight:act?600:400,cursor:"pointer",fontFamily:F,marginBottom:1,transition:"all .1s"}}
+            return<button key={item.k} onClick={()=>{setNav(item.k);setDetail(null);setSearch("")}} style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"7px 10px",borderRadius:7,border:"none",background:act?C.aSoft:"transparent",color:act?C.a:C.t2,fontSize:12.5,fontWeight:act?600:400,cursor:"pointer",fontFamily:F,marginBottom:1,transition:"all .1s"}}
               onMouseOver={e=>{if(!act){e.currentTarget.style.background=C.s2;e.currentTarget.style.color=C.t}}}
               onMouseOut={e=>{if(!act){e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.t2}}}>
               <span style={{flexShrink:0,opacity:act?1:.6}}>{item.i}</span><span style={{flex:1,textAlign:"left"}}>{item.l}</span>
@@ -143,28 +145,39 @@ function App({ session }){
           {nav==="dashboard"&&!detail&&<Dashboard onOpen={id=>{setDetail({t:"project",id})}}/>}
 
           {/* ═══ CLIENTS ═══ */}
-          {nav==="clients"&&!detail&&<><Panel noPad title={`Clients (${_CLIENTS.length})`} actions={<Btn sm onClick={()=>setModal({t:"addClient"})}>{I.plus} Add Client</Btn>}><Table cols={[
+          {nav==="clients"&&!detail&&(()=>{const fc=sq?_CLIENTS.filter(c=>c.name?.toLowerCase().includes(sq)||c.industry?.toLowerCase().includes(sq)||c.contact?.toLowerCase().includes(sq)||c.type?.toLowerCase().includes(sq)):_CLIENTS;return<><Panel noPad title={`Clients (${fc.length})`} actions={<Btn sm onClick={()=>setModal({t:"addClient"})}>{I.plus} Add Client</Btn>}><Table cols={[
             {label:"Company",render:r=><div><div style={{fontWeight:600}}>{r.name}</div><div style={{fontSize:10,color:C.t3}}>{r.industry}</div></div>},
             {label:"Type",render:r=><Badge sm>{r.type}</Badge>},
             {label:"Contact",render:r=><span style={{fontSize:11}}>{r.contact}</span>},
             {label:"Stack",render:r=><div style={{display:"flex",gap:3,flexWrap:"wrap"}}>{(r.stack||[]).map(s=><Badge key={s} sm>{s}</Badge>)}</div>},
             {label:"",render:r=><div style={{display:"flex",gap:4}}><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"editClient",data:r})}}>Edit</Btn><Btn sm v="ghost" onClick={e=>{e.stopPropagation();setModal({t:"deleteClient",id:r.id,name:r.name})}}>Delete</Btn></div>},
-          ]} rows={_CLIENTS} onRow={r=>setDetail({t:"client",id:r.id})}/></Panel><button onClick={()=>setModal({t:"addClient"})} style={{position:"fixed",bottom:28,right:28,width:50,height:50,borderRadius:12,background:C.a,color:"#fff",border:"none",cursor:"pointer",boxShadow:"0 4px 14px rgba(59,130,246,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,zIndex:300,transition:"all .15s"}} onMouseOver={e=>e.currentTarget.style.background=C.aHover} onMouseOut={e=>e.currentTarget.style.background=C.a} title="Add Client">+</button></>}
+          ]} rows={fc} onRow={r=>setDetail({t:"client",id:r.id})}/></Panel><button onClick={()=>setModal({t:"addClient"})} style={{position:"fixed",bottom:28,right:28,width:50,height:50,borderRadius:12,background:C.a,color:"#fff",border:"none",cursor:"pointer",boxShadow:"0 4px 14px rgba(59,130,246,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,zIndex:300,transition:"all .15s"}} onMouseOver={e=>e.currentTarget.style.background=C.aHover} onMouseOut={e=>e.currentTarget.style.background=C.a} title="Add Client">+</button></>;})()}
 
           {detail?.t==="client"&&<ClientDetail cl={_CLIENTS.find(c=>c.id===detail.id)} onOpen={id=>{setDetail({t:"project",id})}} onEdit={cl=>setModal({t:"editClient",data:cl})} onDelete={cl=>setModal({t:"deleteClient",id:cl.id,name:cl.name})}/>}
 
           {/* ═══ PROJECTS ═══ */}
           {nav==="projects"&&!detail&&(()=>{
-            const stages=[...new Set(_PROJECTS.map(p=>p.stage))];
-            let fp=pFilter==="all"?_PROJECTS:_PROJECTS.filter(p=>p.stage===pFilter);
+            const activeProjects=_PROJECTS.filter(p=>p.stage!=="Completed");
+            const completedProjects=_PROJECTS.filter(p=>p.stage==="Completed");
+            const stages=[...new Set(activeProjects.map(p=>p.stage))];
+            let fp=pTab==="completed"?completedProjects:(pFilter==="all"?activeProjects:activeProjects.filter(p=>p.stage===pFilter));
+            if(sq)fp=fp.filter(p=>p.name?.toLowerCase().includes(sq)||gc(p.cl)?.name?.toLowerCase().includes(sq)||p.stage?.toLowerCase().includes(sq)||p.type?.toLowerCase().includes(sq));
             fp=[...fp].sort((a,b)=>{if(pSort==="name")return a.name.localeCompare(b.name);if(pSort==="stage")return a.stage.localeCompare(b.stage);if(pSort==="budget")return(parseInt(a.budget?.replace(/\D/g,""))||0)-(parseInt(b.budget?.replace(/\D/g,""))||0);return 0});
-            return<><Panel noPad title={`Projects (${fp.length})`} actions={<div style={{display:"flex",gap:6,alignItems:"center"}}>
-              <select value={pFilter} onChange={e=>setPFilter(e.target.value)} style={{padding:"4px 8px",borderRadius:6,border:`1px solid ${C.b}`,fontSize:10,fontFamily:F,color:C.t2,background:"#fff",cursor:"pointer"}}>
+            const tabBar=<div style={{display:"flex",gap:0,borderRadius:7,overflow:"hidden",border:`1px solid ${C.b}`,flexShrink:0}}>
+              {[["active",`Projects (${activeProjects.length})`],["completed",`Completed (${completedProjects.length})`]].map(([k,l])=>(
+                <button key={k} onClick={()=>setPTab(k)} style={{padding:"4px 14px",border:"none",borderRight:k==="active"?`1px solid ${C.b}`:"none",cursor:"pointer",fontSize:11,fontWeight:600,fontFamily:F,transition:"all .15s",background:pTab===k?C.a:"#fff",color:pTab===k?"#fff":C.t2}}>{l}</button>
+              ))}
+            </div>;
+            return<><Panel noPad title={tabBar} actions={<div style={{display:"flex",gap:6,alignItems:"center"}}>
+              {pTab==="active"&&<><select value={pFilter} onChange={e=>setPFilter(e.target.value)} style={{padding:"4px 8px",borderRadius:6,border:`1px solid ${C.b}`,fontSize:10,fontFamily:F,color:C.t2,background:"#fff",cursor:"pointer"}}>
                 <option value="all">All Stages</option>{stages.map(s=><option key={s} value={s}>{s}</option>)}
               </select>
               <select value={pSort} onChange={e=>setPSort(e.target.value)} style={{padding:"4px 8px",borderRadius:6,border:`1px solid ${C.b}`,fontSize:10,fontFamily:F,color:C.t2,background:"#fff",cursor:"pointer"}}>
                 <option value="name">Sort: Name</option><option value="stage">Sort: Stage</option><option value="budget">Sort: Budget</option>
-              </select>
+              </select></>}
+              {pTab==="completed"&&<select value={pSort} onChange={e=>setPSort(e.target.value)} style={{padding:"4px 8px",borderRadius:6,border:`1px solid ${C.b}`,fontSize:10,fontFamily:F,color:C.t2,background:"#fff",cursor:"pointer"}}>
+                <option value="name">Sort: Name</option><option value="budget">Sort: Budget</option>
+              </select>}
             </div>}><Table cols={[
               {label:"Project",render:r=><div><div style={{fontWeight:600}}>{r.name}</div><div style={{fontSize:10,color:C.t3}}>{gc(r.cl)?.name}</div></div>},
               {label:"Stage",render:r=><StB stage={r.stage}/>},
@@ -185,6 +198,7 @@ function App({ session }){
           {nav==="tasks"&&!detail&&(()=>{
             const statuses=["all","backlog","todo","in-progress","review","done","blocked"];
             let ft=tFilter==="all"?allT:allT.filter(t=>t.st===tFilter);
+            if(sq)ft=ft.filter(t=>t.title?.toLowerCase().includes(sq)||gm(t.ow)?.name?.toLowerCase().includes(sq)||_PROJECTS.find(p=>p.tasks.some(tk=>tk.id===t.id))?.name?.toLowerCase().includes(sq));
             ft=[...ft].sort((a,b)=>{if(tSort==="title")return a.title.localeCompare(b.title);if(tSort==="status")return(a.st||"").localeCompare(b.st||"");if(tSort==="priority"){const po={urgent:0,high:1,medium:2,low:3};return(po[a.pr]??9)-(po[b.pr]??9)}if(tSort==="due")return(a.due||"z").localeCompare(b.due||"z");return 0});
             return<><Panel noPad title={`All Tasks (${ft.length})`} actions={<div style={{display:"flex",gap:6,alignItems:"center"}}>
               <select value={tFilter} onChange={e=>setTFilter(e.target.value)} style={{padding:"4px 8px",borderRadius:6,border:`1px solid ${C.b}`,fontSize:10,fontFamily:F,color:C.t2,background:"#fff",cursor:"pointer"}}>
@@ -204,13 +218,13 @@ function App({ session }){
           })()}
 
           {/* ═══ ISSUES ═══ */}
-          {nav==="issues"&&!detail&&<Panel noPad title={`Issues (${allI.length})`} actions={<Btn sm>{I.plus} Report</Btn>}><Table cols={[
+          {nav==="issues"&&!detail&&(()=>{const fi=sq?allI.filter(i=>i.title?.toLowerCase().includes(sq)||i.sev?.toLowerCase().includes(sq)||i.tp?.toLowerCase().includes(sq)||gm(i.ow)?.name?.toLowerCase().includes(sq)):allI;return<Panel noPad title={`Issues (${fi.length})`} actions={<Btn sm>{I.plus} Report</Btn>}><Table cols={[
             {label:"Issue",render:r=><span style={{fontWeight:500}}>{r.title}</span>},
             {label:"Type",render:r=><Badge sm color={r.tp==="blocker"?C.r:C.t2} bg={r.tp==="blocker"?C.rBg:C.s2}>{r.tp}</Badge>},
             {label:"Severity",render:r=><Badge sm color={r.sev==="critical"?C.r:r.sev==="high"?C.o:C.y}>{r.sev}</Badge>},
             {label:"Owner",render:r=>{const m=gm(r.ow);return m?<div style={{display:"flex",alignItems:"center",gap:4}}><Av m={m} sz={18}/><span style={{fontSize:11}}>{m.name}</span></div>:null}},
             {label:"Status",render:r=><Badge sm color={r.st==="open"?C.r:C.g}>{r.st}</Badge>},
-          ]} rows={allI}/></Panel>}
+          ]} rows={fi}/></Panel>;})()}
 
           {/* ═══ TEAM ═══ */}
           {nav==="team"&&!detail&&<TeamView onAdd={()=>setModal({t:"addTeam"})} onEdit={m=>setModal({t:"editTeam",data:m})} onDelete={m=>setModal({t:"deleteTeam",id:m.id,name:m.name})}/>}
